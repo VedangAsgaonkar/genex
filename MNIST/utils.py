@@ -92,7 +92,7 @@ def calculate_loss(transformer_encoder, set_embedding, classifier, decoder, VAE_
         ug = torch.clamp(ug, 0,1)
     return ug, vec_ug, out_new, out_g
 
-def greedy(transformer_encoder, decoder, classifier, set_embedding, VAE_sample, loss, data, labels, sets, T, epoch_loss, device, args, testing = False):
+def greedy(transformer_encoder, decoder, classifier, set_embedding, VAE_sample, loss, data, labels, sets, T, epoch_loss, device, args, testing = False, topk=1):
     batch_size = len(data)
     set_size = data[0].shape[0]
     mask = torch.stack([set_to_mask(s, set_size) for s in sets]) # shape [batch_size, set_size]
@@ -170,9 +170,17 @@ def greedy(transformer_encoder, decoder, classifier, set_embedding, VAE_sample, 
     #     return chosen_feature
     # else:
     #     return None
-    chosen_feature = gain.argmax().item()
-    print("Chosen feature", chosen_feature)
-    return chosen_feature
+    if topk == 1:
+        chosen_feature = gain.argmax().item()
+        print("Chosen feature", chosen_feature)
+        return chosen_feature
+    else:
+        _, idx = torch.sort(gain, descending=True)
+        chosen_features = []
+        for i in range(topk):
+            chosen_features.append(idx[i].item())
+        print("Chosen features", chosen_features)
+        return chosen_features
 
 def greedy_test(transformer_encoder, decoder, classifier, set_embedding, data, sets, T, epoch_loss, device, args):
     """data here is generated data for values other than those is S"""
